@@ -48,6 +48,7 @@ import net.filebot.ui.SupportDialog;
 import net.filebot.ui.transfer.FileTransferable;
 import net.filebot.util.PreferencesMap.PreferencesEntry;
 import net.filebot.util.ui.SwingEventBus;
+import net.filebot.util.ui.Theme;
 import net.miginfocom.swing.MigLayout;
 
 public class Main {
@@ -189,12 +190,7 @@ public class Main {
 	}
 
 	private static void startUserInterface(ArgumentBean args) {
-		// use native LaF an all platforms (use platform-independent laf for standalone jar deployment)
-		if (isPortableApp()) {
-			setNimbusLookAndFeel();
-		} else {
-			setSystemLookAndFeel();
-		}
+		Theme.initialize();
 
 		// start multi panel or single panel frame
 		PanelBuilder[] panels = args.getPanelBuilders();
@@ -222,7 +218,7 @@ public class Main {
 		// configure main window
 		if (isMacApp()) {
 			// Mac specific configuration
-			MacAppUtilities.initializeApplication(FileBotMenuBar.createHelp(), files -> SwingEventBus.getInstance().post(new FileTransferable(files)));
+			MacAppUtilities.initializeApplication(FileBotMenuBar.create(), files -> SwingEventBus.getInstance().post(new FileTransferable(files)));
 		} else if (isUbuntuApp()) {
 			// Ubuntu/Debian specific configuration
 			frame.setIconImages(ResourceManager.getApplicationIconImages());
@@ -233,6 +229,10 @@ public class Main {
 		} else {
 			// generic Linux/FreeBSD/Solaris configuration
 			frame.setIconImages(ResourceManager.getApplicationIconImages());
+		}
+
+		if (!isMacApp()) {
+			frame.setJMenuBar(FileBotMenuBar.create());
 		}
 
 		// start application

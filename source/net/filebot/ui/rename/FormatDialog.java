@@ -200,8 +200,8 @@ public class FormatDialog extends JDialog {
 
 		JPanel header = new JPanel(new MigLayout("insets dialog, nogrid, novisualpadding"));
 
-		header.setBackground(Color.white);
-		header.setBorder(new SeparatorBorder(1, new Color(0xB4B4B4), new Color(0xACACAC), GradientStyle.LEFT_TO_RIGHT, Position.BOTTOM));
+		header.setBackground(javax.swing.UIManager.getColor("Panel.background"));
+		header.setBorder(new SeparatorBorder(1, javax.swing.UIManager.getColor("Separator.shadow"), javax.swing.UIManager.getColor("Separator.highlight"), GradientStyle.LEFT_TO_RIGHT, Position.BOTTOM));
 
 		header.add(progressIndicator, "pos 1al 0al, hidemode 3");
 		header.add(title, "wmin 150px, wrap unrel:push");
@@ -397,8 +397,8 @@ public class FormatDialog extends JDialog {
 
 	private JComponent createSyntaxPanel(Mode mode) {
 		JPanel panel = new JPanel(new MigLayout("fill, nogrid, novisualpadding", "[pref]", "[fill, min]"));
-		panel.setBorder(createLineBorder(new Color(0xACA899)));
-		panel.setBackground(new Color(0xFFFFE1));
+		panel.setBorder(createLineBorder(javax.swing.UIManager.getColor("Separator.shadow")));
+		panel.setBackground(javax.swing.UIManager.getColor("TextField.background"));
 		panel.setOpaque(true);
 
 		panel.add(new LinkButton(newAction(ResourceBundle.getBundle(FormatDialog.class.getName()).getString(mode.key() + ".syntax"), evt -> {
@@ -411,8 +411,8 @@ public class FormatDialog extends JDialog {
 	private JComponent createExamplesPanel(Mode mode) {
 		JPanel panel = new JPanel(new MigLayout("fill, wrap 3"));
 
-		panel.setBorder(createLineBorder(new Color(0xACA899)));
-		panel.setBackground(new Color(0xFFFFE1));
+		panel.setBorder(createLineBorder(javax.swing.UIManager.getColor("Separator.shadow")));
+		panel.setBackground(javax.swing.UIManager.getColor("TextField.background"));
 
 		for (String format : mode.getSampleExpressions()) {
 			LinkButton formatLink = new LinkButton(newAction(format, e -> setFormatCode(format)));

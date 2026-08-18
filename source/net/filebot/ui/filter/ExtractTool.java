@@ -5,7 +5,6 @@ import static net.filebot.UserFiles.*;
 import static net.filebot.util.FileUtilities.*;
 import static net.filebot.util.ui.SwingUI.*;
 
-import java.awt.Color;
 import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
@@ -25,6 +24,7 @@ import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.UIManager;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 
@@ -56,12 +56,10 @@ class ExtractTool extends Tool<TableModel> {
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
 		table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-		table.setBackground(Color.white);
-		table.setGridColor(new Color(0xEEEEEE));
 		table.setRowHeight(25);
 
 		JScrollPane tableScrollPane = new JScrollPane(table);
-		tableScrollPane.setBorder(new SeparatorBorder(2, new Color(0, 0, 0, 90), GradientStyle.TOP_TO_BOTTOM, SeparatorBorder.Position.BOTTOM));
+		tableScrollPane.setBorder(new SeparatorBorder(2, UIManager.getColor("Separator.shadow"), GradientStyle.TOP_TO_BOTTOM, SeparatorBorder.Position.BOTTOM));
 
 		setLayout(new MigLayout("insets 0, nogrid, fill", "align center", "[fill][pref!]"));
 		add(new LoadingOverlayPane(tableScrollPane, this, "25px", "30px"), "grow, wrap");
