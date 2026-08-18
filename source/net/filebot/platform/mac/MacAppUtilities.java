@@ -1,6 +1,7 @@
 package net.filebot.platform.mac;
 
 import static ca.weblite.objc.util.CocoaUtils.*;
+import static net.filebot.util.ui.Theme.*;
 
 import java.awt.Desktop;
 import java.awt.EventQueue;
@@ -94,7 +95,9 @@ public class MacAppUtilities {
 
 	public static void initializeApplication(JMenuBar appMenuBar, Consumer<List<File>> openFileHandler) {
 		// improved UI defaults
-		UIManager.put("TitledBorder.border", UIManager.getBorder("InsetBorder.aquaVariant"));
+		if (!isDark()) {
+			UIManager.put("TitledBorder.border", UIManager.getBorder("InsetBorder.aquaVariant"));
+		}
 
 		// make sure Application Quit Events get forwarded to normal Window Listeners
 		Desktop.getDesktop().setQuitStrategy(QuitStrategy.CLOSE_ALL_WINDOWS);
