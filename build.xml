@@ -210,9 +210,6 @@
 			<zipfileset src="${dir.dist}/lib/json-io.jar">
 				<include name="com/cedarsoftware/util/**" />
 			</zipfileset>
-			<zipfileset src="${dir.dist}/lib/xmlrpc.jar">
-				<include name="redstone/xmlrpc/**" />
-			</zipfileset>
 			<zipfileset src="${dir.dist}/lib/sevenzipjbinding.jar">
 				<include name="net/sf/sevenzipjbinding/**" />
 			</zipfileset>
@@ -783,7 +780,6 @@
 				<include name="guava.jar" />
 			</fileset>
 			<fileset dir="${dir.lib}/jars">
-				<include name="xmlrpc.jar" />
 				<include name="ObjCBridge.jar" />
 				<include name="simmetrics.jar" />
 				<include name="jacksum.jar" />

@@ -34,6 +34,17 @@ FILEBOT_APIKEY_THEMOVIEDB=your-key
 
 The same naming scheme applies to `thetvdb`, `opensubtitles`, `omdb`, `acoustid`, `anidb`, and `fanart.tv` (`FILEBOT_APIKEY_FANART_TV`).
 
+For OpenSubtitles, create an API consumer key from your [OpenSubtitles.com account](https://www.opensubtitles.com/consumers) and provide it as `FILEBOT_APIKEY_OPENSUBTITLES`.
+
+OpenSubtitles downloads also require an OpenSubtitles.com account. Enter it in the subtitle panel for the current session, or configure it at launch:
+
+```text
+FILEBOT_OPENSUBTITLES_USERNAME=your-username
+FILEBOT_OPENSUBTITLES_PASSWORD=your-password
+```
+
+The equivalent Java system properties are `net.filebot.opensubtitles.username` and `net.filebot.opensubtitles.password`. Passwords entered in the interface are not persisted.
+
 # Binaries/Releases
 Check out the releases for some releases.
 
