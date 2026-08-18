@@ -46,7 +46,18 @@ public final class Settings {
 	}
 
 	public static String getApiKey(String name) {
-		return getApplicationProperty("apikey." + name);
+		String propertyName = "net.filebot.apikey." + name;
+		String environmentName = "FILEBOT_APIKEY_" + name.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "_");
+
+		String value = System.getProperty(propertyName);
+		if (value == null || value.trim().isEmpty()) {
+			value = System.getenv(environmentName);
+		}
+		if (value == null || value.trim().isEmpty()) {
+			value = getApplicationProperty("apikey." + name);
+		}
+
+		return value == null ? "" : value.trim();
 	}
 
 	public static boolean isUnixFS() {

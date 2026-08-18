@@ -80,7 +80,7 @@ public final class WebServices {
 	}
 
 	public static EpisodeListProvider[] getEpisodeListProviders() {
-		return new EpisodeListProvider[] { TheTVDB, AniDB, TheMovieDB_TV, TVmaze };
+		return new EpisodeListProvider[] { TheMovieDB_TV, TheTVDB, AniDB, TVmaze };
 	}
 
 	public static MusicIdentificationService[] getMusicIdentificationServices() {
