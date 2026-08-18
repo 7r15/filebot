@@ -2,6 +2,7 @@ package net.filebot.web;
 
 import static net.filebot.util.JsonUtilities.*;
 import static org.junit.Assert.*;
+import static org.junit.Assume.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -106,6 +107,19 @@ public class OpenSubtitlesRestApiTest {
 		} finally {
 			server.stop(0);
 		}
+	}
+
+	@Test
+	public void searchesLiveServiceWhenConfigured() throws Exception {
+		String apiKey = System.getenv("FILEBOT_APIKEY_OPENSUBTITLES");
+		assumeTrue(apiKey != null && !apiKey.trim().isEmpty());
+
+		OpenSubtitlesRestApi liveApi = new OpenSubtitlesRestApi(apiKey, "FileBot integration test");
+		List<OpenSubtitlesSubtitleDescriptor> subtitles = liveApi.searchSubtitles(SubtitleSearchRequest.forImdbId(1375666, -1, -1, "en"));
+
+		assertFalse(subtitles.isEmpty());
+		assertNotNull(subtitles.get(0).getProperty(Property.IDSubtitleFile));
+		assertEquals("English", subtitles.get(0).getLanguageName());
 	}
 
 	private static String readBody(HttpExchange exchange) throws IOException {
