@@ -111,8 +111,8 @@ class HistoryDialog extends JDialog {
 
 		JPanel header = new JPanel(new MigLayout("insets dialog, nogrid, fillx"));
 
-		header.setBackground(Color.white);
-		header.setBorder(new SeparatorBorder(1, new Color(0xB4B4B4), new Color(0xACACAC), GradientStyle.LEFT_TO_RIGHT, Position.BOTTOM));
+		header.setBackground(javax.swing.UIManager.getColor("Panel.background"));
+		header.setBorder(new SeparatorBorder(1, javax.swing.UIManager.getColor("Separator.shadow"), javax.swing.UIManager.getColor("Separator.highlight"), GradientStyle.LEFT_TO_RIGHT, Position.BOTTOM));
 
 		header.add(title, "wrap");
 		header.add(infoLabel, "gap indent*2, wrap");
@@ -288,7 +288,7 @@ class HistoryDialog extends JDialog {
 
 	private JTable createTable(TableModel model) {
 		JTable table = new JTable(model);
-		table.setBackground(Color.white);
+		table.setBackground(javax.swing.UIManager.getColor("Table.background"));
 		table.setAutoCreateRowSorter(true);
 		table.setFillsViewportHeight(true);
 

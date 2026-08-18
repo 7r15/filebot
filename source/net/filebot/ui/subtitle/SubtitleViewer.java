@@ -71,8 +71,8 @@ public class SubtitleViewer extends JFrame {
 
 		JPanel header = new JPanel(new MigLayout("insets dialog, nogrid, novisualpadding, fillx"));
 
-		header.setBackground(Color.white);
-		header.setBorder(new SeparatorBorder(1, new Color(0xB4B4B4), new Color(0xACACAC), GradientStyle.LEFT_TO_RIGHT, Position.BOTTOM));
+		header.setBackground(javax.swing.UIManager.getColor("Panel.background"));
+		header.setBorder(new SeparatorBorder(1, javax.swing.UIManager.getColor("Separator.shadow"), javax.swing.UIManager.getColor("Separator.highlight"), GradientStyle.LEFT_TO_RIGHT, Position.BOTTOM));
 
 		header.add(titleLabel, "wrap, h pref!");
 		header.add(infoLabel, "gap indent*2, h pref!, wrap");
@@ -99,7 +99,7 @@ public class SubtitleViewer extends JFrame {
 
 	private JTable createTable(TableModel model) {
 		final JTable table = new JTable(model);
-		table.setBackground(Color.white);
+		table.setBackground(javax.swing.UIManager.getColor("Table.background"));
 		table.setAutoCreateRowSorter(true);
 		table.setFillsViewportHeight(true);
 		table.setRowHeight(18);

@@ -3,7 +3,6 @@ package net.filebot.ui.sfv;
 
 import static net.filebot.hash.VerificationUtilities.*;
 
-import java.awt.Color;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JTable;
@@ -27,10 +26,6 @@ class ChecksumTable extends JTable {
 
 		setDragEnabled(true);
 		setUI(new DragDropRowTableUI());
-
-		// force white background (e.g. gtk-laf default table background is gray)
-		setBackground(Color.WHITE);
-		setGridColor(Color.LIGHT_GRAY);
 
 		// highlight CRC32 patterns in filenames in green and with smaller font-size
 		setDefaultRenderer(String.class, new HighlightPatternCellRenderer(EMBEDDED_CHECKSUM));

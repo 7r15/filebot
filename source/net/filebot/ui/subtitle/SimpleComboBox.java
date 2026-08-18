@@ -57,8 +57,8 @@ public class SimpleComboBox extends JComboBox {
 					super.configurePopup();
 
 					setOpaque(true);
-					list.setBackground(Color.white);
-					setBackground(Color.white);
+					list.setBackground(javax.swing.UIManager.getColor("List.background"));
+					setBackground(javax.swing.UIManager.getColor("PopupMenu.background"));
 
 					// use gray instead of black border for combobox popup
 					setBorder(createCompoundBorder(createLineBorder(Color.gray, 1), createEmptyBorder(1, 1, 1, 1)));

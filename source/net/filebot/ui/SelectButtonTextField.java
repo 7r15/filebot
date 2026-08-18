@@ -142,7 +142,7 @@ public class SelectButtonTextField<T> extends JComponent {
 		public void configureArrowButton() {
 			super.configureArrowButton();
 
-			arrowButton.setBackground(Color.white);
+			arrowButton.setBackground(javax.swing.UIManager.getColor("TextField.background"));
 			arrowButton.setOpaque(true);
 			arrowButton.setBorder(createEmptyBorder());
 			arrowButton.setContentAreaFilled(false);

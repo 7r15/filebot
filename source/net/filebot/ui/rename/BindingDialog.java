@@ -122,7 +122,7 @@ class BindingDialog extends JDialog {
 		table.setAutoCreateRowSorter(true);
 		table.setAutoCreateColumnsFromModel(true);
 		table.setFillsViewportHeight(true);
-		table.setBackground(Color.white);
+		table.setBackground(javax.swing.UIManager.getColor("Table.background"));
 
 		table.setDefaultRenderer(Future.class, new DefaultTableCellRenderer() {
 
@@ -264,8 +264,8 @@ class BindingDialog extends JDialog {
 					table.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
 					table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-					table.setBackground(Color.white);
-					table.setGridColor(new Color(0xEEEEEE));
+					table.setBackground(javax.swing.UIManager.getColor("Table.background"));
+					table.setGridColor(javax.swing.UIManager.getColor("Table.gridColor"));
 					table.setRowHeight(25);
 
 					// set media info exclude filter

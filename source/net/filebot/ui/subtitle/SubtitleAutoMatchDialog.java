@@ -125,7 +125,7 @@ class SubtitleAutoMatchDialog extends JDialog {
 		table.setRowHeight(24);
 		table.setIntercellSpacing(new Dimension(5, 5));
 
-		table.setBackground(Color.white);
+		table.setBackground(javax.swing.UIManager.getColor("Table.background"));
 		table.setAutoCreateRowSorter(true);
 		table.setFillsViewportHeight(true);
 
@@ -359,7 +359,7 @@ class SubtitleAutoMatchDialog extends JDialog {
 		private final JComboBox optionComboBox = new SimpleComboBox(ResourceManager.getIcon("action.select"));
 
 		public SubtitleMappingOptionRenderer() {
-			optionComboBox.setBackground(Color.white);
+			optionComboBox.setBackground(javax.swing.UIManager.getColor("ComboBox.background"));
 			optionComboBox.setRenderer(new SubtitleOptionRenderer(false));
 		}
 

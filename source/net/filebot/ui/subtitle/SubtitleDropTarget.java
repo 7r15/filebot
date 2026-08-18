@@ -61,7 +61,7 @@ abstract class SubtitleDropTarget extends JButton {
 		setContentAreaFilled(false);
 		setFocusPainted(false);
 		setBorderPainted(false);
-		setBackground(Color.white);
+		setBackground(javax.swing.UIManager.getColor("Panel.background"));
 
 		// initialize with default mode
 		setDropAction(DropAction.Accept);

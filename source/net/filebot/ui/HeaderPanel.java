@@ -13,6 +13,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 
 import net.filebot.util.ui.GradientStyle;
 import net.filebot.util.ui.notification.SeparatorBorder;
@@ -23,19 +24,16 @@ public class HeaderPanel extends JComponent {
 	private JLabel titleLabel = new JLabel();
 
 	private float[] gradientFractions = { 0.0f, 0.5f, 1.0f };
-	private Color[] gradientColors = { new Color(0xF6F6F6), new Color(0xF8F8F8), new Color(0xF3F3F3) };
+	private Color[] gradientColors;
 
 	public HeaderPanel() {
 		setLayout(new BorderLayout());
-		setBackground(Color.WHITE);
-
 		JPanel centerPanel = new JPanel(new BorderLayout());
 		centerPanel.setOpaque(false);
 
 		titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		titleLabel.setVerticalAlignment(SwingConstants.CENTER);
 		titleLabel.setOpaque(false);
-		titleLabel.setForeground(new Color(0x101010));
 		titleLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 24));
 
 		centerPanel.setBorder(createEmptyBorder());
@@ -43,7 +41,27 @@ public class HeaderPanel extends JComponent {
 
 		add(centerPanel, BorderLayout.CENTER);
 
-		setBorder(new SeparatorBorder(1, new Color(0xB4B4B4), new Color(0xACACAC), GradientStyle.LEFT_TO_RIGHT, Position.BOTTOM));
+		updateColors();
+	}
+
+	@Override
+	public void updateUI() {
+		super.updateUI();
+		if (titleLabel != null) {
+			updateColors();
+		}
+	}
+
+	private void updateColors() {
+		Color background = UIManager.getColor("Panel.background");
+		Color foreground = UIManager.getColor("Label.foreground");
+		Color shadow = UIManager.getColor("Separator.shadow");
+		Color highlight = UIManager.getColor("Separator.highlight");
+
+		setBackground(background);
+		titleLabel.setForeground(foreground);
+		gradientColors = new Color[] { background.brighter(), background, background.darker() };
+		setBorder(new SeparatorBorder(1, shadow, highlight, GradientStyle.LEFT_TO_RIGHT, Position.BOTTOM));
 	}
 
 	public void setTitle(String title) {
