@@ -19,7 +19,7 @@ import net.filebot.util.FileUtilities;
 /**
  * Describes a subtitle on OpenSubtitles.
  *
- * @see OpenSubtitlesXmlRpc
+ * @see OpenSubtitlesRestApi
  */
 public class OpenSubtitlesSubtitleDescriptor implements SubtitleDescriptor, Serializable {
 
@@ -43,9 +43,17 @@ public class OpenSubtitlesSubtitleDescriptor implements SubtitleDescriptor, Seri
 	}
 
 	private final Map<Property, String> properties;
+	private transient OpenSubtitlesRestApi restApi;
+	private String fileId;
 
 	public OpenSubtitlesSubtitleDescriptor(Map<Property, String> properties) {
 		this.properties = properties;
+	}
+
+	public OpenSubtitlesSubtitleDescriptor(Map<Property, String> properties, OpenSubtitlesRestApi restApi, String fileId) {
+		this.properties = properties;
+		this.restApi = restApi;
+		this.fileId = fileId;
 	}
 
 	public Map<Property, String> getProperties() {
@@ -78,7 +86,7 @@ public class OpenSubtitlesSubtitleDescriptor implements SubtitleDescriptor, Seri
 
 	@Override
 	public long getLength() {
-		return Long.parseLong(getProperty(Property.SubSize));
+		return longValue(Property.SubSize);
 	}
 
 	public String getMovieHash() {
@@ -86,7 +94,7 @@ public class OpenSubtitlesSubtitleDescriptor implements SubtitleDescriptor, Seri
 	}
 
 	public long getMovieByteSize() {
-		return Long.parseLong(getProperty(Property.MovieByteSize));
+		return longValue(Property.MovieByteSize);
 	}
 
 	public String getMovieReleaseName() {
@@ -94,23 +102,34 @@ public class OpenSubtitlesSubtitleDescriptor implements SubtitleDescriptor, Seri
 	}
 
 	public int getQueryNumber() {
-		return Integer.parseInt(getProperty(Property.QueryNumber));
+		return intValue(Property.QueryNumber);
 	}
 
 	public float getMovieFPS() {
-		return Float.parseFloat(getProperty(Property.MovieFPS));
+		String value = getProperty(Property.MovieFPS);
+		return value == null || value.isEmpty() ? 0 : Float.parseFloat(value);
 	}
 
 	public long getMovieTimeMS() {
-		return Long.parseLong(getProperty(Property.MovieTimeMS));
+		return longValue(Property.MovieTimeMS);
 	}
 
 	public int getSubActualCD() {
-		return Integer.parseInt(getProperty(Property.SubActualCD));
+		return intValue(Property.SubActualCD);
 	}
 
 	public int getSubSumCD() {
-		return Integer.parseInt(getProperty(Property.SubSumCD));
+		return intValue(Property.SubSumCD);
+	}
+
+	private long longValue(Property property) {
+		String value = getProperty(property);
+		return value == null || value.isEmpty() ? 0 : Long.parseLong(value);
+	}
+
+	private int intValue(Property property) {
+		String value = getProperty(property);
+		return value == null || value.isEmpty() ? 0 : Integer.parseInt(value);
 	}
 
 	private static int DOWNLOAD_QUOTA = 1000;
@@ -128,6 +147,10 @@ public class OpenSubtitlesSubtitleDescriptor implements SubtitleDescriptor, Seri
 
 	@Override
 	public ByteBuffer fetch() throws Exception {
+		if (restApi != null && fileId != null) {
+			return restApi.download(fileId);
+		}
+
 		checkDownloadQuota();
 
 		URLConnection c = new URL(getProperty(Property.SubDownloadLink)).openConnection();

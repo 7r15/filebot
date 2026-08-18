@@ -62,7 +62,7 @@ public final class WebServices {
 	public static final TMDbTVClient TheMovieDB_TV = new TMDbTVClient(TheMovieDB);
 
 	// subtitle sources
-	public static final OpenSubtitlesClient OpenSubtitles = new OpenSubtitlesClientWithLocalSearch(getApiKey("opensubtitles"), getApplicationVersion());
+	public static final OpenSubtitlesClient OpenSubtitles = new OpenSubtitlesClientWithLocalSearch(getApiKey("opensubtitles"), getApplicationName(), getApplicationVersion());
 	public static final ShooterSubtitles Shooter = new ShooterSubtitles();
 
 	// other sources
@@ -207,8 +207,8 @@ public final class WebServices {
 
 	public static class OpenSubtitlesClientWithLocalSearch extends OpenSubtitlesClient {
 
-		public OpenSubtitlesClientWithLocalSearch(String name, String version) {
-			super(name, version);
+		public OpenSubtitlesClientWithLocalSearch(String apiKey, String applicationName, String version) {
+			super(apiKey, applicationName, version);
 		}
 
 		// local OpenSubtitles search index
@@ -228,14 +228,29 @@ public final class WebServices {
 	}
 
 	public static final String LOGIN_SEPARATOR = ":";
-	public static final String LOGIN_OPENSUBTITLES = "osdb.user";
+	public static final String LOGIN_OPENSUBTITLES = "opensubtitles.user";
 
 	/**
 	 * Initialize client settings from system properties
 	 */
 	static {
 		String[] osdbLogin = getLogin(LOGIN_OPENSUBTITLES);
+		String environmentUser = System.getenv("FILEBOT_OPENSUBTITLES_USERNAME");
+		String environmentPassword = System.getenv("FILEBOT_OPENSUBTITLES_PASSWORD");
+		String propertyUser = System.getProperty("net.filebot.opensubtitles.username");
+		String propertyPassword = System.getProperty("net.filebot.opensubtitles.password");
+		osdbLogin[0] = firstNonEmpty(propertyUser, environmentUser, osdbLogin[0]);
+		osdbLogin[1] = firstNonEmpty(propertyPassword, environmentPassword, osdbLogin[1]);
 		OpenSubtitles.setUser(osdbLogin[0], osdbLogin[1]);
+	}
+
+	private static String firstNonEmpty(String... values) {
+		for (String value : values) {
+			if (value != null && !value.isEmpty()) {
+				return value;
+			}
+		}
+		return "";
 	}
 
 	public static String[] getLogin(String key) {
@@ -266,9 +281,8 @@ public final class WebServices {
 			}
 
 			if (LOGIN_OPENSUBTITLES.equals(id)) {
-				String password_md5 = md5(password);
-				OpenSubtitles.setUser(user, password_md5);
-				Settings.forPackage(WebServices.class).put(id, user + LOGIN_SEPARATOR + password_md5);
+				OpenSubtitles.setUser(user, password);
+				Settings.forPackage(WebServices.class).put(id, user + LOGIN_SEPARATOR);
 			} else {
 				throw new IllegalArgumentException();
 			}

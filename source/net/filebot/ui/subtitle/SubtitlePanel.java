@@ -305,12 +305,12 @@ public class SubtitlePanel extends AbstractSearchPanel<SubtitleProvider, Subtitl
 			// restore values
 			String[] osdbAuth = WebServices.getLogin(WebServices.LOGIN_OPENSUBTITLES);
 			osdbUser.setText(osdbAuth[0]);
-			// osdbPass.setText(osdbAuth[1]); // password is stored as MD5 hash so we can't restore it
+			// passwords are kept in memory for the current session only
 
 			if (osdbUser.getText().isEmpty()) {
-				osdbGroup.add(new LinkButton("Register Account", "Register to increase your download quota", WebServices.OpenSubtitles.getIcon(), URI.create("http://www.opensubtitles.org/en/newuser")), "spanx 2, tag left");
+				osdbGroup.add(new LinkButton("Register Account", "Register to increase your download quota", WebServices.OpenSubtitles.getIcon(), URI.create("https://www.opensubtitles.com/en/users/sign_up")), "spanx 2, tag left");
 			} else {
-				osdbGroup.add(new LinkButton("Upgrade Account", "Upgrade to increase your download quota", WebServices.OpenSubtitles.getIcon(), URI.create("http://www.opensubtitles.org/en/support")), "spanx 2, tag left");
+				osdbGroup.add(new LinkButton("Upgrade Account", "Upgrade to increase your download quota", WebServices.OpenSubtitles.getIcon(), URI.create("https://www.opensubtitles.com/en/vip")), "spanx 2, tag left");
 			}
 
 			JRootPane container = authPanel.getRootPane();
@@ -328,16 +328,16 @@ public class SubtitlePanel extends AbstractSearchPanel<SubtitleProvider, Subtitl
 
 					try {
 						if (osdbUser.getText().length() > 0 && osdbPass.getPassword().length > 0) {
-							final OpenSubtitlesClient osdb = new OpenSubtitlesClient(getApplicationName(), getApplicationVersion());
-							osdb.setUser(osdbUser.getText(), md5(new String(osdbPass.getPassword())));
+							final OpenSubtitlesClient osdb = new OpenSubtitlesClient(getApiKey("opensubtitles"), getApplicationName(), getApplicationVersion());
+							osdb.setUser(osdbUser.getText(), new String(osdbPass.getPassword()));
 							osdb.login();
 
 							// do some status checks in background (since OpenSubtitles can be really really slow)
 							WebServices.requestThreadPool.submit(() -> {
 								try {
 									// check download quota for the current user
-									Map<?, ?> limits = (Map<?, ?>) osdb.getServerInfo().get("download_limits");
-									log.log(Level.INFO, String.format("Your daily download quota is at %s of %s.", limits.get("client_24h_download_count"), limits.get("client_24h_download_limit")));
+									Map<?, ?> limits = osdb.getDownloadLimits();
+									log.log(Level.INFO, String.format("Your remaining daily subtitle downloads: %s.", limits.get("remaining_downloads")));
 
 									// logout from test session
 									osdb.logout();
