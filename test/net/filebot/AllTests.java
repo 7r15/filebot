@@ -19,7 +19,7 @@ import net.filebot.util.UtilTestSuite;
 import net.filebot.web.WebTestSuite;
 
 @RunWith(Suite.class)
-@SuiteClasses({ ExpressionFormatTest.class, VerificationFormatTest.class, MatchModelTest.class, SupportDialogTest.class, EpisodeMetricsTest.class, ReleaseInfoTest.class, VideoFormatTest.class, MediaDetectionTest.class, MediaInfoTest.class, SimilarityTestSuite.class, WebTestSuite.class, SubtitleReaderTestSuite.class, UtilTestSuite.class })
+@SuiteClasses({ SettingsTest.class, ExpressionFormatTest.class, VerificationFormatTest.class, MatchModelTest.class, SupportDialogTest.class, EpisodeMetricsTest.class, ReleaseInfoTest.class, VideoFormatTest.class, MediaDetectionTest.class, MediaInfoTest.class, SimilarityTestSuite.class, WebTestSuite.class, SubtitleReaderTestSuite.class, UtilTestSuite.class })
 public class AllTests {
 
 }

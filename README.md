@@ -21,6 +21,19 @@ Looks like another newer fork is available here: https://github.com/deleted-repo
 # Building
 It is possible to build the source code as a standalone jar or as an self signed UWP app.
 
+## Metadata provider credentials
+
+Provider credentials are supplied at runtime instead of being committed to the repository. Each key can be configured with a Java system property or an environment variable. System properties take precedence.
+
+For example, The Movie Database accepts either of the following:
+
+```text
+-Dnet.filebot.apikey.themoviedb=your-key
+FILEBOT_APIKEY_THEMOVIEDB=your-key
+```
+
+The same naming scheme applies to `thetvdb`, `opensubtitles`, `omdb`, `acoustid`, `anidb`, and `fanart.tv` (`FILEBOT_APIKEY_FANART_TV`).
+
 # Binaries/Releases
 Check out the releases for some releases.
 
