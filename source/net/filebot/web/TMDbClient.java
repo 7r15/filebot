@@ -2,12 +2,10 @@ package net.filebot.web;
 
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
-import static net.filebot.CachedResource.*;
 import static net.filebot.Logging.*;
 import static net.filebot.similarity.Normalization.*;
 import static net.filebot.util.JsonUtilities.*;
 import static net.filebot.util.StringUtilities.*;
-import static net.filebot.web.WebRequest.*;
 
 import java.io.FileNotFoundException;
 import java.net.URI;
@@ -21,7 +19,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -30,23 +27,23 @@ import java.util.stream.Stream;
 
 import javax.swing.Icon;
 
-import net.filebot.Cache;
-import net.filebot.CacheType;
 import net.filebot.ResourceManager;
 
 public class TMDbClient implements MovieIdentificationService, ArtworkProvider {
 
-	// X-RateLimit: 40 requests per 10 seconds => https://developers.themoviedb.org/3/getting-started/request-rate-limiting
-	private static final FloodLimit REQUEST_LIMIT = new FloodLimit(35, 10, TimeUnit.SECONDS);
-
-	private final String host = "api.themoviedb.org";
-	private final String version = "3";
-
-	private String apikey;
-	private boolean adult;
+	private final TMDbApi api;
+	private final boolean adult;
 
 	public TMDbClient(String apikey, boolean adult) {
-		this.apikey = apikey;
+		this(apikey, "", adult);
+	}
+
+	public TMDbClient(String apikey, String accessToken, boolean adult) {
+		this(new TMDbV3Api(apikey, accessToken), adult);
+	}
+
+	TMDbClient(TMDbApi api, boolean adult) {
+		this.api = api;
 		this.adult = adult;
 	}
 
@@ -308,14 +305,7 @@ public class TMDbClient implements MovieIdentificationService, ArtworkProvider {
 			return null;
 		}
 
-		try {
-			String mirror = (String) Cache.getCache(getName(), CacheType.Monthly).computeIfAbsent("configuration.secure_base_url", it -> {
-				return getString(getMap(getConfiguration(), "images"), "secure_base_url");
-			});
-			return new URL(mirror + "original" + path);
-		} catch (Exception e) {
-			throw new IllegalArgumentException(path, e);
-		}
+		return api.resolveImage(path);
 	}
 
 	public Map<String, List<String>> getAlternativeTitles(int id) throws Exception {
@@ -355,56 +345,7 @@ public class TMDbClient implements MovieIdentificationService, ArtworkProvider {
 	}
 
 	protected Object request(String resource, Map<String, Object> parameters, Locale locale) throws Exception {
-		// default parameters
-		String key = parameters.isEmpty() ? resource : resource + '?' + encodeParameters(parameters, true);
-		String language = getLanguageCode(locale);
-		String cacheName = language == null ? getName() : getName() + "_" + language;
-
-		Cache cache = Cache.getCache(cacheName, CacheType.Monthly);
-		Object json = cache.json(key, k -> getResource(k, language)).fetch(withPermit(fetchIfNoneMatch(url -> key, cache), r -> REQUEST_LIMIT.acquirePermit())).expire(Cache.ONE_WEEK).get();
-
-		if (asMap(json).isEmpty()) {
-			throw new FileNotFoundException(String.format("Resource is empty: %s => %s", json, getResource(key, language)));
-		}
-		return json;
-	}
-
-	protected URL getResource(String path, String language) throws Exception {
-		StringBuilder file = new StringBuilder();
-		file.append('/').append(version);
-		file.append('/').append(path);
-		file.append(path.lastIndexOf('?') < 0 ? '?' : '&');
-
-		if (language != null) {
-			file.append("language=").append(language).append('&');
-		}
-		file.append("api_key=").append(apikey);
-
-		return new URL("https", host, file.toString());
-	}
-
-	protected String getLanguageCode(Locale locale) {
-		String language = locale.getLanguage();
-
-		// Note: ISO 639 is not a stable standard— some languages' codes have changed.
-		// Locale's constructor recognizes both the new and the old codes for the languages whose codes have changed,
-		// but this function always returns the old code.
-		switch (language) {
-		case "iw":
-			return "he-IL"; // Hebrew
-		case "in":
-			return "id-ID"; // Indonesian
-		case "":
-			return null; // empty language code
-		}
-
-		// require 2-letter language code
-		String country = locale.getCountry();
-		if (country.length() > 0) {
-			return language + '-' + country; // e.g. es-MX
-		}
-
-		return language;
+		return api.request(resource, parameters, locale);
 	}
 
 }

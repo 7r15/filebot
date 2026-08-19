@@ -1,5 +1,6 @@
 package net.filebot.web;
 
+import static net.filebot.util.JsonUtilities.*;
 import static org.junit.Assert.*;
 
 import java.util.List;
@@ -9,63 +10,38 @@ import org.junit.Test;
 
 public class TMDbTVClientTest {
 
-	static TMDbTVClient db = new TMDbTVClient(TMDbClientTest.db);
-
-	static SearchResult buffy = new SearchResult(95, "Buffy the Vampire Slayer");
-	static SearchResult wonderfalls = new SearchResult(1982, "Wonderfalls");
-	static SearchResult firefly = new SearchResult(1437, "Firefly");
-
 	@Test
-	public void search() throws Exception {
-		// test default language and query escaping (blanks)
-		List<SearchResult> results = db.search("babylon 5", Locale.ENGLISH);
+	public void searchUsesSharedAdapter() throws Exception {
+		TMDbClientTest.FixtureApi api = new TMDbClientTest.FixtureApi();
+		api.response = readJson("{\"results\":[{\"id\":3137,\"name\":\"Babylon 5\",\"original_name\":\"Babylon 5\"}]}");
+		TMDbTVClient client = new TMDbTVClient(new TMDbClient(api, false));
 
+		List<SearchResult> results = client.searchTV("babylon 5", -1, Locale.ENGLISH, false);
+
+		assertEquals("search/tv", api.resource);
+		assertEquals("babylon 5", api.parameters.get("query"));
 		assertEquals(1, results.size());
-
 		assertEquals("Babylon 5", results.get(0).getName());
 		assertEquals(3137, results.get(0).getId());
 	}
 
 	@Test
-	public void getEpisodeListAll() throws Exception {
-		List<Episode> list = db.getEpisodeList(buffy, SortOrder.Airdate, Locale.ENGLISH);
+	public void seriesAndEpisodesAreMappedFromFixtures() throws Exception {
+		TMDbClientTest.FixtureApi api = new TMDbClientTest.FixtureApi();
+		api.responses.put("tv/95", readJson("{\"name\":\"Buffy the Vampire Slayer\",\"original_name\":\"Buffy the Vampire Slayer\",\"status\":\"Ended\",\"original_language\":\"en\",\"first_air_date\":\"1997-03-10\",\"vote_average\":8.1,\"vote_count\":1500,\"episode_run_time\":[42],\"genres\":[{\"name\":\"Drama\"}],\"networks\":[{\"name\":\"The WB\"}],\"seasons\":[{\"season_number\":0},{\"season_number\":1}]}"));
+		api.responses.put("tv/95/season/0", readJson("{\"episodes\":[{\"id\":900,\"episode_number\":1,\"season_number\":0,\"name\":\"Unaired Pilot\",\"air_date\":null}]}"));
+		api.responses.put("tv/95/season/1", readJson("{\"episodes\":[{\"id\":901,\"episode_number\":1,\"season_number\":1,\"name\":\"Welcome to the Hellmouth\",\"air_date\":\"1997-03-10\"}]}"));
+		TMDbTVClient client = new TMDbTVClient(new TMDbClient(api, false));
 
-		assertTrue(list.size() >= 144);
+		AbstractEpisodeListProvider.SeriesData data = client.fetchSeriesData(new SearchResult(95, "Buffy the Vampire Slayer"), SortOrder.Airdate, Locale.ENGLISH);
+		List<Episode> episodes = data.getEpisodeList();
 
-		// check ordinary episode
-		Episode first = list.get(0);
-		assertEquals("Buffy the Vampire Slayer", first.getSeriesName());
-		assertEquals("1997-03-10", first.getSeriesInfo().getStartDate().toString());
-		assertEquals("Welcome to the Hellmouth (1)", first.getTitle());
-		assertEquals("1", first.getEpisode().toString());
-		assertEquals("1", first.getSeason().toString());
-		assertEquals("1", first.getAbsolute().toString());
-		assertEquals("1997-03-10", first.getAirdate().toString());
-
-		// check special episode
-		Episode last = list.get(list.size() - 1);
-		assertEquals("Buffy the Vampire Slayer", last.getSeriesName());
-		assertEquals("Unaired Buffy the Vampire Slayer pilot", last.getTitle());
-		assertEquals(null, last.getSeason());
-		assertEquals(null, last.getEpisode());
-		assertEquals(null, last.getAbsolute());
-		assertEquals("1", last.getSpecial().toString());
-		assertEquals(null, last.getAirdate());
+		assertEquals(2, episodes.size());
+		assertEquals("Welcome to the Hellmouth", episodes.get(0).getTitle());
+		assertEquals(Integer.valueOf(1), episodes.get(0).getAbsolute());
+		assertEquals("Unaired Pilot", episodes.get(1).getTitle());
+		assertEquals(Integer.valueOf(1), episodes.get(1).getSpecial());
+		assertEquals("The WB", data.getSeriesInfo().getNetwork());
+		assertEquals("1997-03-10", data.getSeriesInfo().getStartDate().toString());
 	}
-
-	@Test
-	public void getEpisodeListSingleSeason() throws Exception {
-		List<Episode> list = db.getEpisodeList(wonderfalls, SortOrder.Airdate, Locale.ENGLISH);
-
-		Episode first = list.get(0);
-		assertEquals("Wonderfalls", first.getSeriesName());
-		assertEquals("2004-03-12", first.getSeriesInfo().getStartDate().toString());
-		assertEquals("Wax Lion", first.getTitle());
-		assertEquals("1", first.getEpisode().toString());
-		assertEquals("1", first.getSeason().toString());
-		assertEquals("1", first.getAbsolute().toString());
-		assertEquals("2004-03-12", first.getAirdate().toString());
-		assertEquals("134989", first.getId().toString());
-	}
-
 }
