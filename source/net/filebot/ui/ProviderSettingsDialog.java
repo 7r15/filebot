@@ -22,7 +22,7 @@ import net.miginfocom.swing.MigLayout;
 
 public class ProviderSettingsDialog extends JDialog {
 
-	private static final Provider[] PROVIDERS = { new Provider("themoviedb.token", "TMDB read access token", true), new Provider("themoviedb", "TMDB API key (legacy)", true), new Provider("thetvdb", "TheTVDB v4", true), new Provider("thetvdb.pin", "TheTVDB subscriber PIN", false), new Provider("opensubtitles", "OpenSubtitles", true), new Provider("omdb", "OMDb", true), new Provider("fanart.tv", "Fanart.tv", true), new Provider("acoustid", "AcoustID", false), new Provider("anidb", "AniDB client", false) };
+	private static final Provider[] PROVIDERS = { new Provider("themoviedb.token", "TMDB read access token", true), new Provider("themoviedb", "TMDB API key (legacy)", true), new Provider("thetvdb", "TheTVDB v4", true), new Provider("thetvdb.pin", "TheTVDB subscriber PIN", false), new Provider("opensubtitles", "OpenSubtitles", true), new Provider("omdb", "OMDb", true), new Provider("fanart.tv", "Fanart.tv", true), new Provider("acoustid", "AcoustID", false), new Provider("anidb", "AniDB client", false), new Provider("anidb.version", "AniDB client version", false) };
 
 	private final List<ProviderRow> rows = new ArrayList<ProviderRow>();
 

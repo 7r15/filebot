@@ -1,125 +1,66 @@
 package net.filebot.web;
 
+import static java.nio.charset.StandardCharsets.*;
+import static net.filebot.web.WebRequest.*;
 import static org.junit.Assert.*;
 
 import java.util.List;
 import java.util.Locale;
 
 import org.junit.Test;
+import org.w3c.dom.Document;
 
 public class AnidbClientTest {
 
-	static AnidbClient anidb = new AnidbClient("filebot", 6);
-
-	/**
-	 * 74 episodes
-	 */
-	SearchResult monsterSearchResult = new SearchResult(1539, "Monster");
-
-	/**
-	 * 45 episodes
-	 */
-	SearchResult twelvekingdomsSearchResult = new SearchResult(26, "Juuni Kokuki");
-
-	/**
-	 * 38 episodes, lots of special characters
-	 */
-	SearchResult princessTutuSearchResult = new SearchResult(516, "Princess Tutu");
+	private static final String TITLES = "# fixture\n69|1|x-jat|One Piece\n69|4|en|One Piece\n69|2|en|One &amp; Piece\n1539|1|x-jat|Monster\n1539|4|en|Monster\n";
+	private static final String ANIME = "<anime id=\"1539\"><type>TV Series</type><startdate>2004-04-07</startdate><titles><title type=\"main\" lang=\"x-jat\">Monster</title><title type=\"official\" lang=\"en\">Monster</title><title type=\"official\" lang=\"ja\">MONSTER</title></titles><ratings><permanent count=\"1000\">8.8</permanent></ratings><categories><category weight=\"600\"><name>Thriller</name></category><category weight=\"300\"><name>Minor</name></category></categories><episodes><episode id=\"17843\"><epno type=\"1\">1</epno><airdate>2004-04-07</airdate><title lang=\"en\">Herr Dr. Tenma</title><title lang=\"ja\">Dr. Tenma</title></episode><episode id=\"17844\"><epno type=\"2\">S1</epno><airdate>2004-04-08</airdate><title lang=\"en\">Interview</title></episode></episodes></anime>";
 
 	@Test
-	public void getAnimeTitles() throws Exception {
-		SearchResult[] animeTitles = anidb.getAnimeTitles();
-		assertTrue(animeTitles.length > 8000);
+	public void titleDumpBuildsLocalSearchIndex() throws Exception {
+		AnidbClient client = new AnidbClient(new FixtureApi());
+
+		SearchResult[] titles = client.getAnimeTitles();
+		List<SearchResult> results = client.search("one piece", Locale.ENGLISH);
+
+		assertEquals(2, titles.length);
+		assertEquals(69, results.get(0).getId());
+		assertEquals("One Piece", results.get(0).getName());
+		assertArrayEquals(new String[] { "One & Piece" }, results.get(0).getAliasNames());
 	}
 
 	@Test
-	public void search() throws Exception {
-		List<SearchResult> results = anidb.search("one piece", Locale.ENGLISH);
+	public void animeFixtureMapsSeriesAndEpisodes() throws Exception {
+		AnidbClient client = new AnidbClient(new FixtureApi());
 
-		SearchResult result = results.get(0);
-		assertEquals("One Piece", result.getName());
-		assertEquals(69, result.getId());
+		AbstractEpisodeListProvider.SeriesData data = client.fetchSeriesData(new SearchResult(1539, "Monster"), SortOrder.Absolute, Locale.ENGLISH);
+		List<Episode> episodes = data.getEpisodeList();
+
+		assertEquals("Monster", data.getSeriesInfo().getName());
+		assertEquals("2004-04-07", data.getSeriesInfo().getStartDate().toString());
+		assertEquals("Thriller", data.getSeriesInfo().getGenres().get(0));
+		assertEquals(2, episodes.size());
+		assertEquals("Herr Dr. Tenma", episodes.get(0).getTitle());
+		assertEquals(Integer.valueOf(1), episodes.get(0).getAbsolute());
+		assertEquals("Interview", episodes.get(1).getTitle());
+		assertEquals(Integer.valueOf(1), episodes.get(1).getSpecial());
 	}
 
-	@Test
-	public void searchNoMatch() throws Exception {
-		List<SearchResult> results = anidb.search("i will not find anything for this query string", Locale.ENGLISH);
+	private static class FixtureApi implements AniDBApi {
 
-		assertTrue(results.isEmpty());
+		private final Document anime;
+
+		FixtureApi() throws Exception {
+			anime = getDocument(ANIME);
+		}
+
+		@Override
+		public Document getAnime(int id) {
+			return anime;
+		}
+
+		@Override
+		public byte[] getAnimeTitles() {
+			return TITLES.getBytes(UTF_8);
+		}
 	}
-
-	@Test
-	public void searchTitleAlias() throws Exception {
-		// Seikai no Senki (main title), Banner of the Stars (official English title)
-		assertEquals("Seikai no Senki", anidb.search("banner of the stars", Locale.ENGLISH).get(0).getName());
-		assertEquals("Seikai no Senki", anidb.search("seikai no senki", Locale.ENGLISH).get(0).getName());
-
-		// no matching title
-		assertEquals("Naruto", anidb.search("naruto", Locale.ENGLISH).get(0).getName());
-	}
-
-	@Test
-	public void getEpisodeListAll() throws Exception {
-		List<Episode> list = anidb.getEpisodeList(monsterSearchResult, SortOrder.Airdate, Locale.ENGLISH);
-
-		assertEquals(77, list.size());
-
-		Episode first = list.get(0);
-
-		assertEquals("Monster", first.getSeriesName());
-		assertEquals("2004-04-07", first.getSeriesInfo().getStartDate().toString());
-		assertEquals("Herr Dr. Tenma", first.getTitle());
-		assertEquals("1", first.getEpisode().toString());
-		assertEquals("1", first.getAbsolute().toString());
-		assertEquals(null, first.getSeason());
-		assertEquals("2004-04-07", first.getAirdate().toString());
-		assertEquals("17843", first.getId().toString());
-	}
-
-	@Test
-	public void getEpisodeListAllShortLink() throws Exception {
-		List<Episode> list = anidb.getEpisodeList(twelvekingdomsSearchResult, SortOrder.Airdate, Locale.ENGLISH);
-
-		assertEquals(47, list.size());
-
-		Episode first = list.get(0);
-
-		assertEquals("The Twelve Kingdoms", first.getSeriesName());
-		assertEquals("2002-04-09", first.getSeriesInfo().getStartDate().toString());
-		assertEquals("Shadow of the Moon, The Sea of Shadow - Chapter 1", first.getTitle());
-		assertEquals("1", first.getEpisode().toString());
-		assertEquals("1", first.getAbsolute().toString());
-		assertEquals(null, first.getSeason());
-		assertEquals("2002-04-09", first.getAirdate().toString());
-	}
-
-	@Test
-	public void getEpisodeListEncoding() throws Exception {
-		assertEquals("Raven Princess - An der schönen blauen Donau", anidb.getEpisodeList(princessTutuSearchResult, SortOrder.Airdate, Locale.ENGLISH).get(6).getTitle());
-	}
-
-	@Test
-	public void getEpisodeListI18N() throws Exception {
-		List<Episode> list = anidb.getEpisodeList(monsterSearchResult, SortOrder.Airdate, Locale.JAPANESE);
-
-		Episode last = list.get(73);
-		assertEquals("MONSTER", last.getSeriesName());
-		assertEquals("2004-04-07", last.getSeriesInfo().getStartDate().toString());
-		assertEquals("本当の怪物", last.getTitle());
-		assertEquals("74", last.getEpisode().toString());
-		assertEquals("74", last.getAbsolute().toString());
-		assertEquals(null, last.getSeason());
-		assertEquals("2005-09-28", last.getAirdate().toString());
-	}
-
-	@Test
-	public void getEpisodeListTrimRecap() throws Exception {
-		assertEquals("Sea God of the East, Azure Sea of the West - Transition Chapter", anidb.getEpisodeList(twelvekingdomsSearchResult, SortOrder.Airdate, Locale.ENGLISH).get(44).getTitle());
-	}
-
-	@Test
-	public void getEpisodeListLink() throws Exception {
-		assertEquals("http://anidb.net/a1539", anidb.getEpisodeListLink(monsterSearchResult).toURL().toString());
-	}
-
 }
