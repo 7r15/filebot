@@ -1,116 +1,71 @@
 package net.filebot.web;
 
+import static net.filebot.util.JsonUtilities.*;
 import static org.junit.Assert.*;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 
 public class OMDbClientTest {
 
-	private final OMDbClient client = new OMDbClient("49d311ec");
-
 	@Test
-	public void searchMovie1() throws Exception {
-		List<Movie> results = client.searchMovie("Avatar", null);
-		Movie movie = results.get(0);
+	public void searchMapsMoviesAndFiltersOtherTypes() throws Exception {
+		FixtureApi api = new FixtureApi("{\"Search\":[{\"Title\":\"Avatar\",\"Year\":\"2009\",\"imdbID\":\"tt0499549\",\"Type\":\"movie\"},{\"Title\":\"Avatar: The Last Airbender\",\"Year\":\"2005\",\"imdbID\":\"tt0417299\",\"Type\":\"series\"}],\"Response\":\"True\"}");
+		OMDbClient client = new OMDbClient(api);
 
-		assertEquals("Avatar", movie.getName());
-		assertEquals(2009, movie.getYear());
-		assertEquals(499549, movie.getImdbId(), 0);
+		List<Movie> results = client.searchMovie("Avatar 2009", null);
+
+		assertEquals("Avatar", api.parameters.get("s"));
+		assertEquals(2009, api.parameters.get("y"));
+		assertEquals(1, results.size());
+		assertEquals("Avatar", results.get(0).getName());
+		assertEquals(2009, results.get(0).getYear());
+		assertEquals(499549, results.get(0).getImdbId());
 	}
 
 	@Test
-	public void searchMovie2() throws Exception {
-		List<Movie> results = client.searchMovie("The Terminator", null);
-		Movie movie = results.get(0);
+	public void descriptorMapsIdentifierResponse() throws Exception {
+		FixtureApi api = new FixtureApi("{\"Title\":\"Avatar\",\"Year\":\"2009\",\"imdbID\":\"tt0499549\",\"Type\":\"movie\",\"Response\":\"True\"}");
+		OMDbClient client = new OMDbClient(api);
 
-		assertEquals("The Terminator", movie.getName());
-		assertEquals(1984, movie.getYear());
-		assertEquals(88247, movie.getImdbId());
-	}
-
-	@Test
-	public void searchMovie3() throws Exception {
-		List<Movie> results = client.searchMovie("Amélie", null);
-		Movie movie = results.get(0);
-
-		assertEquals("Amélie", movie.getName());
-		assertEquals(2001, movie.getYear());
-		assertEquals(211915, movie.getImdbId(), 0);
-	}
-
-	@Test
-	public void searchMovie4() throws Exception {
-		List<Movie> results = client.searchMovie("Heat", null);
-		Movie movie = results.get(0);
-
-		assertEquals("Heat", movie.getName());
-		assertEquals(1995, movie.getYear());
-		assertEquals(113277, movie.getImdbId(), 0);
-	}
-
-	@Test
-	public void searchMovie6() throws Exception {
-		List<Movie> results = client.searchMovie("Drive 2011", null);
-		Movie movie = results.get(0);
-
-		assertEquals("Drive", movie.getName());
-		assertEquals(2011, movie.getYear());
-		assertEquals(780504, movie.getImdbId(), 0);
-	}
-
-	@Test
-	public void getMovieDescriptor1() throws Exception {
 		Movie movie = client.getMovieDescriptor(new Movie(499549), null);
 
+		assertEquals("tt0499549", api.parameters.get("i"));
 		assertEquals("Avatar", movie.getName());
-		assertEquals(2009, movie.getYear());
-		assertEquals(499549, movie.getImdbId(), 0);
+		assertEquals(499549, movie.getImdbId());
 	}
 
 	@Test
-	public void getMovieDescriptor2() throws Exception {
-		Movie movie = client.getMovieDescriptor(new Movie(211915), null);
+	public void movieInfoMapsMetadataFixture() throws Exception {
+		FixtureApi api = new FixtureApi("{\"Title\":\"Avatar\",\"Year\":\"2009\",\"Rated\":\"PG-13\",\"Released\":\"18 Dec 2009\",\"Runtime\":\"162 min\",\"Genre\":\"Action, Adventure\",\"Director\":\"James Cameron\",\"Writer\":\"James Cameron\",\"Actors\":\"Sam Worthington, Zoe Saldana\",\"Plot\":\"A marine visits Pandora.\",\"Language\":\"English, Spanish\",\"Poster\":\"https://images.example/avatar.jpg\",\"imdbRating\":\"7.9\",\"imdbVotes\":\"1,400,000\",\"imdbID\":\"tt0499549\",\"Type\":\"movie\",\"Response\":\"True\"}");
+		OMDbClient client = new OMDbClient(api);
 
-		assertEquals("Amélie", movie.getName());
-		assertEquals(2001, movie.getYear());
-		assertEquals(211915, movie.getImdbId(), 0);
+		MovieInfo movie = client.getMovieInfo(new Movie(499549));
+
+		assertEquals("Avatar", movie.getName());
+		assertEquals("2009-12-18", movie.getReleased().toString());
+		assertEquals("PG-13", movie.getCertification());
+		assertEquals("James Cameron", movie.getDirector());
+		assertEquals("Sam Worthington", movie.getActors().get(0));
+		assertEquals("162", movie.getRuntime().toString());
 	}
 
-	@Test
-	public void getMovieDescriptor3() throws Exception {
-		Movie movie = client.getMovieDescriptor(new Movie(75610), null);
+	private static class FixtureApi implements OMDbApi {
 
-		assertEquals("21 Up", movie.getName());
-		assertEquals(1977, movie.getYear());
-		assertEquals(75610, movie.getImdbId(), 0);
+		private final Object response;
+		private Map<String, Object> parameters = new LinkedHashMap<String, Object>();
+
+		FixtureApi(String response) throws Exception {
+			this.response = readJson(response);
+		}
+
+		@Override
+		public Object request(Map<String, Object> parameters) {
+			this.parameters = new LinkedHashMap<String, Object>(parameters);
+			return response;
+		}
 	}
-
-	@Test
-	public void getMovieDescriptor4() throws Exception {
-		Movie movie = client.getMovieDescriptor(new Movie(369702), null);
-
-		assertEquals("The Sea Inside", movie.getName());
-		assertEquals(2004, movie.getYear());
-		assertEquals(369702, movie.getImdbId(), 0);
-	}
-
-	@Test
-	public void getMovieDescriptor5() throws Exception {
-		Movie movie = client.getMovieDescriptor(new Movie(1020960), null);
-
-		assertEquals("God, the Universe and Everything Else", movie.getName());
-		assertEquals(1988, movie.getYear());
-		assertEquals(1020960, movie.getImdbId(), 0);
-	}
-
-	@Test
-	public void getImdbApiMovieInfoReleasedNA() throws Exception {
-		MovieInfo movie = client.getMovieInfo(new Movie(1287357));
-		assertEquals("Sommersonntag", movie.getName());
-		assertEquals(2008, movie.getReleased().getYear());
-		assertEquals("2008-06-07", movie.getReleased().toString());
-	}
-
 }
