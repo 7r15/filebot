@@ -17,6 +17,7 @@ public class FileBotMenuBar {
 	public static JMenuBar create() {
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(createAppearance());
+		menuBar.add(createSettings());
 		menuBar.add(createHelp());
 		return menuBar;
 	}
@@ -33,6 +34,12 @@ public class FileBotMenuBar {
 		}
 
 		return appearance;
+	}
+
+	private static JMenu createSettings() {
+		JMenu settings = new JMenu("Settings");
+		settings.add(newAction("Providers...", null, evt -> ProviderSettingsDialog.show(getWindow(evt.getSource()))));
+		return settings;
 	}
 
 	public static JMenu createHelp() {

@@ -37,4 +37,30 @@ public class SettingsTest {
 			}
 		}
 	}
+
+	@Test
+	public void savedApiKeyIsResolved() {
+		String name = "settings-test-provider";
+		String property = Settings.getApiKeyPropertyName(name);
+		String previousProperty = System.getProperty(property);
+		String previousUserValue = Settings.getUserApiKey(name);
+
+		try {
+			System.clearProperty(property);
+			Settings.setUserApiKey(name, " saved-key ");
+			assertEquals(Settings.ApiKeySource.USER, Settings.getApiKeySource(name));
+			assertEquals("saved-key", Settings.getApiKey(name));
+
+			System.setProperty(property, "property-key");
+			assertEquals(Settings.ApiKeySource.JAVA_PROPERTY, Settings.getApiKeySource(name));
+			assertEquals("property-key", Settings.getApiKey(name));
+		} finally {
+			Settings.setUserApiKey(name, previousUserValue);
+			if (previousProperty == null) {
+				System.clearProperty(property);
+			} else {
+				System.setProperty(property, previousProperty);
+			}
+		}
+	}
 }
