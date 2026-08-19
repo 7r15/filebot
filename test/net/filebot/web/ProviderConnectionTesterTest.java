@@ -21,7 +21,7 @@ public class ProviderConnectionTesterTest {
 	public void supportedProviderChecksAcceptValidResponses() throws Exception {
 		Map<String, String> requests = new LinkedHashMap<String, String>();
 		HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
-		server.createContext("/tmdb", exchange -> respond(exchange, requests, "tmdb", "{\"images\":{\"base_url\":\"https://example.test/\"}}"));
+		server.createContext("/tmdb", exchange -> respond(exchange, requests, exchange.getRequestHeaders().getFirst("Authorization") == null ? "tmdb" : "tmdb.token", "{\"images\":{\"base_url\":\"https://example.test/\"}}"));
 		server.createContext("/tvdb", exchange -> respond(exchange, requests, "tvdb", "{\"data\":{\"token\":\"token\"}}"));
 		server.createContext("/opensubtitles/infos/languages", exchange -> respond(exchange, requests, "opensubtitles", "{\"data\":[{\"language_code\":\"en\",\"language_name\":\"English\"}]}"));
 		server.createContext("/omdb", exchange -> respond(exchange, requests, "omdb", "{\"imdbID\":\"tt1375666\"}"));
@@ -37,12 +37,14 @@ public class ProviderConnectionTesterTest {
 			setEndpoint("fanart.tv", base + "/fanart");
 
 			ProviderConnectionTester.test("themoviedb", "tmdb-key");
+			ProviderConnectionTester.test("themoviedb.token", "tmdb-token");
 			ProviderConnectionTester.test("thetvdb", "tvdb-key");
 			ProviderConnectionTester.test("opensubtitles", "subtitles-key");
 			ProviderConnectionTester.test("omdb", "omdb-key");
 			ProviderConnectionTester.test("fanart.tv", "fanart-key");
 
 			assertTrue(requests.get("tmdb").contains("api_key=tmdb-key"));
+			assertEquals("Bearer tmdb-token", requests.get("tmdb.token"));
 			assertTrue(requests.get("tvdb").contains("tvdb-key"));
 			assertEquals("subtitles-key", requests.get("opensubtitles"));
 			assertTrue(requests.get("omdb").contains("apikey=omdb-key"));
@@ -63,7 +65,7 @@ public class ProviderConnectionTesterTest {
 			ProviderConnectionTester.test("themoviedb", " ");
 			fail("Expected missing credential error");
 		} catch (IllegalArgumentException e) {
-			assertEquals("Enter an API key first", e.getMessage());
+			assertEquals("Enter a credential first", e.getMessage());
 		}
 	}
 
@@ -79,6 +81,8 @@ public class ProviderConnectionTesterTest {
 		String request = exchange.getRequestURI().getRawQuery();
 		if ("tvdb".equals(provider)) {
 			request = read(exchange.getRequestBody());
+		} else if ("tmdb.token".equals(provider)) {
+			request = exchange.getRequestHeaders().getFirst("Authorization");
 		} else if ("opensubtitles".equals(provider)) {
 			request = exchange.getRequestHeaders().getFirst("Api-Key");
 		}

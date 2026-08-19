@@ -16,11 +16,14 @@ public final class ProviderConnectionTester {
 
 	public static void test(String provider, String apiKey) {
 		if (apiKey == null || apiKey.trim().isEmpty()) {
-			throw new IllegalArgumentException("Enter an API key first");
+			throw new IllegalArgumentException("Enter a credential first");
 		}
 
 		try {
 			switch (provider) {
+			case "themoviedb.token":
+				testTheMovieDBToken(apiKey.trim());
+				break;
 			case "themoviedb":
 				testTheMovieDB(apiKey.trim());
 				break;
@@ -48,6 +51,13 @@ public final class ProviderConnectionTester {
 
 	private static void testTheMovieDB(String apiKey) throws Exception {
 		Object response = get(endpoint("themoviedb", "https://api.themoviedb.org/3/configuration") + "?api_key=" + encode(apiKey), emptyMap());
+		if (getMap(response, "images").isEmpty()) {
+			throw new IllegalStateException();
+		}
+	}
+
+	private static void testTheMovieDBToken(String accessToken) throws Exception {
+		Object response = get(endpoint("themoviedb", "https://api.themoviedb.org/3/configuration"), singletonMap("Authorization", "Bearer " + accessToken));
 		if (getMap(response, "images").isEmpty()) {
 			throw new IllegalStateException();
 		}

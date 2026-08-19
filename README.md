@@ -25,12 +25,14 @@ It is possible to build the source code as a standalone jar or as an self signed
 
 Provider credentials are supplied at runtime instead of being committed to the repository. Each key can be configured with a Java system property or an environment variable. System properties take precedence.
 
-For example, The Movie Database accepts either of the following:
+The Movie Database read access token is the preferred credential:
 
 ```text
--Dnet.filebot.apikey.themoviedb=your-key
-FILEBOT_APIKEY_THEMOVIEDB=your-key
+-Dnet.filebot.apikey.themoviedb.token=your-token
+FILEBOT_APIKEY_THEMOVIEDB_TOKEN=your-token
 ```
+
+Legacy v3 API keys remain supported as `net.filebot.apikey.themoviedb` or `FILEBOT_APIKEY_THEMOVIEDB`.
 
 The same naming scheme applies to `thetvdb`, `opensubtitles`, `omdb`, `acoustid`, `anidb`, and `fanart.tv` (`FILEBOT_APIKEY_FANART_TV`). Credentials can also be saved through **Settings > Providers** in the desktop interface.
 
