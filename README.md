@@ -32,7 +32,16 @@ For example, The Movie Database accepts either of the following:
 FILEBOT_APIKEY_THEMOVIEDB=your-key
 ```
 
-The same naming scheme applies to `thetvdb`, `opensubtitles`, `omdb`, `acoustid`, `anidb`, and `fanart.tv` (`FILEBOT_APIKEY_FANART_TV`).
+The same naming scheme applies to `thetvdb`, `opensubtitles`, `omdb`, `acoustid`, `anidb`, and `fanart.tv` (`FILEBOT_APIKEY_FANART_TV`). Credentials can also be saved through **Settings > Providers** in the desktop interface.
+
+TheTVDB v4 uses a project API key. User-supported projects also require the subscriber PIN provided by TheTVDB:
+
+```text
+FILEBOT_APIKEY_THETVDB=your-project-key
+FILEBOT_APIKEY_THETVDB_PIN=your-subscriber-pin
+```
+
+The equivalent Java properties are `net.filebot.apikey.thetvdb` and `net.filebot.apikey.thetvdb.pin`. Metadata provided by [TheTVDB](https://thetvdb.com/).
 
 For OpenSubtitles, create an API consumer key from your [OpenSubtitles.com account](https://www.opensubtitles.com/consumers) and provide it as `FILEBOT_APIKEY_OPENSUBTITLES`.
 

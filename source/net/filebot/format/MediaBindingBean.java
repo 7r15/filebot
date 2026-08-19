@@ -622,7 +622,7 @@ public class MediaBindingBean {
 		if (infoObject instanceof Movie)
 			return getMovieInfo().getActors();
 		if (infoObject instanceof Episode)
-			return ExpressionFormatMethods.getActors(getSeriesInfo()); // use TheTVDB API v2 to retrieve actors info
+			return ExpressionFormatMethods.getActors(getSeriesInfo()); // retrieve extended actor information from TheTVDB
 
 		return null;
 	}
@@ -649,7 +649,7 @@ public class MediaBindingBean {
 		if (infoObject instanceof Movie)
 			return getMovieInfo().getDirector();
 		if (infoObject instanceof Episode)
-			return ExpressionFormatMethods.getInfo(getEpisode()).getDirector(); // use TheTVDB API v2 to retrieve extended episode info
+			return ExpressionFormatMethods.getInfo(getEpisode()).getDirector(); // retrieve extended episode information from TheTVDB
 
 		return null;
 	}
