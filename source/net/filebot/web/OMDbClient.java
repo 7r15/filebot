@@ -2,14 +2,11 @@ package net.filebot.web;
 
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
-import static net.filebot.CachedResource.*;
 import static net.filebot.Logging.*;
 import static net.filebot.util.JsonUtilities.*;
 import static net.filebot.util.RegularExpressions.*;
 import static net.filebot.util.StringUtilities.*;
-import static net.filebot.web.WebRequest.*;
 
-import java.net.URL;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
@@ -22,25 +19,24 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
-import net.filebot.Cache;
-import net.filebot.CacheType;
 import net.filebot.ResourceManager;
 
 public class OMDbClient implements MovieIdentificationService {
 
-	private static final FloodLimit REQUEST_LIMIT = new FloodLimit(2, 1, TimeUnit.SECONDS);
-
-	private String apikey;
+	private final OMDbApi api;
 
 	public OMDbClient(String apikey) {
-		this.apikey = apikey;
+		this(new OMDbV1Api(apikey));
+	}
+
+	OMDbClient(OMDbApi api) {
+		this.api = api;
 	}
 
 	@Override
@@ -132,15 +128,7 @@ public class OMDbClient implements MovieIdentificationService {
 	}
 
 	public Object request(Map<String, Object> parameters) throws Exception {
-		Cache cache = Cache.getCache(getName(), CacheType.Monthly);
-
-		return cache.json(encodeParameters(parameters, true), s -> {
-			return getResource('?' + s + "&apikey=" + apikey);
-		}).fetch(withPermit(fetchIfModified(), r -> REQUEST_LIMIT.acquirePermit())).expire(Cache.ONE_WEEK).get();
-	}
-
-	public URL getResource(String file) throws Exception {
-		return new URL("http://www.omdbapi.com/" + file);
+		return api.request(parameters);
 	}
 
 	public Map<String, String> getMovieInfo(Integer i, String t, String y, boolean tomatoes) throws Exception {

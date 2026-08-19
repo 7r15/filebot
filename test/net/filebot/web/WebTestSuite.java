@@ -5,7 +5,7 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
-@SuiteClasses({ WebServicesTest.class, OpenSubtitlesRestApiTest.class, SimpleDateTest.class, AnidbClientTest.class, TheTVDBClientTest.class, TheTVDBV4ApiTest.class, TVMazeClientTest.class, TMDbClientTest.class, TMDbTVClientTest.class, TMDbV3ApiTest.class, OMDbClientTest.class, AcoustIDClientTest.class, AcoustIDV2ApiTest.class })
+@SuiteClasses({ WebServicesTest.class, OpenSubtitlesRestApiTest.class, SimpleDateTest.class, AnidbClientTest.class, TheTVDBClientTest.class, TheTVDBV4ApiTest.class, TVMazeClientTest.class, TMDbClientTest.class, TMDbTVClientTest.class, TMDbV3ApiTest.class, OMDbClientTest.class, OMDbV1ApiTest.class, AcoustIDClientTest.class, AcoustIDV2ApiTest.class })
 public class WebTestSuite {
 
 }

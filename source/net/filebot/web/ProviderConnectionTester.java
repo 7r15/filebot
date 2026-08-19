@@ -85,7 +85,7 @@ public final class ProviderConnectionTester {
 	}
 
 	private static void testOMDb(String apiKey) throws Exception {
-		Object response = get(endpoint("omdb", "https://www.omdbapi.com/") + "?i=tt1375666&apikey=" + encode(apiKey), emptyMap());
+		Object response = new OMDbV1Api(apiKey, endpoint("omdb", "https://www.omdbapi.com/"), false).request(singletonMap("i", "tt1375666"));
 		if (!"tt1375666".equals(getString(response, "imdbID"))) {
 			throw new IllegalStateException();
 		}
