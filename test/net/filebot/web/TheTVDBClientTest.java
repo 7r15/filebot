@@ -1,7 +1,9 @@
 package net.filebot.web;
 
+import static net.filebot.util.JsonUtilities.*;
 import static org.junit.Assert.*;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 
@@ -9,197 +11,131 @@ import org.junit.Test;
 
 public class TheTVDBClientTest {
 
-	static TheTVDBClient db = new TheTVDBClient("BA864DEE427E384A");
-
-	SearchResult buffy = new SearchResult(70327, "Buffy the Vampire Slayer");
-	SearchResult wonderfalls = new SearchResult(78845, "Wonderfalls");
-	SearchResult firefly = new SearchResult(78874, "Firefly");
+	private final FixtureApi api = new FixtureApi();
+	private final TheTVDBClient client = new TheTVDBClient(api);
 
 	@Test
-	public void search() throws Exception {
-		// test default language and query escaping (blanks)
-		List<SearchResult> results = db.search("babylon 5", Locale.ENGLISH);
-
-		assertEquals(2, results.size());
-
-		SearchResult first = results.get(0);
-
-		assertEquals("Babylon 5", first.getName());
-		assertEquals(70726, first.getId());
+	public void searchMapsV4SeriesResults() throws Exception {
+		List<SearchResult> results = client.fetchSearchResult("Fixture Show", Locale.GERMAN);
+		assertEquals(1, results.size());
+		assertEquals(991001, results.get(0).getId());
+		assertEquals("Fixture Show", results.get(0).getName());
+		assertArrayEquals(new String[] { "Fixture Alias" }, results.get(0).getAliasNames());
+		assertEquals("Fixture Show", api.query);
+		assertEquals(Locale.GERMAN, api.locale);
 	}
 
 	@Test
-	public void searchGerman() throws Exception {
-		List<SearchResult> results = db.search("Buffy", Locale.GERMAN);
+	public void seriesMetadataMapsV4ExtendedRecord() throws Exception {
+		TheTVDBSeriesInfo info = client.getSeriesInfo(new SearchResult(991001, "Fixture Show", new String[] { "Search Alias" }), Locale.ENGLISH);
+		assertEquals("Fixture Show", info.getName());
+		assertEquals("TV-14", info.getCertification());
+		assertEquals("Fixture Network", info.getNetwork());
+		assertEquals("Continuing", info.getStatus());
+		assertEquals(Integer.valueOf(45), info.getRuntime());
+		assertEquals("Drama", info.getGenres().get(0));
+		assertEquals("2020-01-02", info.getStartDate().toString());
+		assertEquals("tt1234567", info.getImdbId());
+		assertEquals("Fixture overview", info.getOverview());
+		assertEquals("Friday", info.getAirsDayOfWeek());
+		assertEquals("20:00", info.getAirsTime());
+		assertEquals("https://artworks.thetvdb.com/banners/fixture.jpg", info.getBannerUrl().toString());
+		assertTrue(info.getAliasNames().contains("Search Alias"));
+		assertTrue(info.getAliasNames().contains("Extended Alias"));
 
-		SearchResult first = results.get(0);
-		assertEquals("Buffy", first.getName());
-		assertEquals(70327, first.getId());
+		TheTVDBSeriesInfo german = client.getSeriesInfo(991001, Locale.GERMAN);
+		assertEquals("Beispielserie", german.getName());
+		assertEquals("Deutsche Beschreibung", german.getOverview());
 	}
 
 	@Test
-	public void getEpisodeListAll() throws Exception {
-		List<Episode> list = db.getEpisodeList(buffy, SortOrder.Airdate, Locale.ENGLISH);
+	public void episodeOrdersMapWithoutLeakingIntoCallers() throws Exception {
+		List<Episode> episodes = client.fetchSeriesData(new SearchResult(991001), SortOrder.DVD, Locale.ENGLISH).getEpisodeList();
+		assertEquals("dvd", api.seasonType);
+		assertEquals(2, episodes.size());
 
-		assertEquals(145, list.size());
+		Episode first = episodes.get(0);
+		assertEquals("Fixture Show", first.getSeriesName());
+		assertEquals(Integer.valueOf(1), first.getSeason());
+		assertEquals(Integer.valueOf(1), first.getEpisode());
+		assertEquals(Integer.valueOf(7), first.getAbsolute());
+		assertEquals("DVD Premiere", first.getTitle());
 
-		// check ordinary episode
-		Episode first = list.get(0);
-		assertEquals("Buffy the Vampire Slayer", first.getSeriesName());
-		assertEquals("1997-03-10", first.getSeriesInfo().getStartDate().toString());
-		assertEquals("Welcome to the Hellmouth (1)", first.getTitle());
-		assertEquals("1", first.getEpisode().toString());
-		assertEquals("1", first.getSeason().toString());
-		assertEquals("1", first.getAbsolute().toString());
-		assertEquals("1997-03-10", first.getAirdate().toString());
-
-		// check special episode
-		Episode last = list.get(list.size() - 1);
-		assertEquals("Buffy the Vampire Slayer", last.getSeriesName());
-		assertEquals("Unaired Pilot", last.getTitle());
-		assertEquals(null, last.getSeason());
-		assertEquals(null, last.getEpisode());
-		assertEquals(null, last.getAbsolute());
-		assertEquals("1", last.getSpecial().toString());
-		assertEquals(null, last.getAirdate());
+		Episode special = episodes.get(1);
+		assertNull(special.getSeason());
+		assertNull(special.getEpisode());
+		assertEquals(Integer.valueOf(1), special.getSpecial());
 	}
 
 	@Test
-	public void getEpisodeListSingleSeason() throws Exception {
-		List<Episode> list = db.getEpisodeList(wonderfalls, SortOrder.Airdate, Locale.ENGLISH);
+	public void remoteLookupArtworkAndCreditsMapV4Records() throws Exception {
+		SearchResult result = client.lookupByIMDbID(1234567, Locale.ENGLISH);
+		assertEquals(991001, result.getId());
+		assertEquals("tt1234567", api.remoteId);
 
-		Episode first = list.get(0);
+		Artwork artwork = client.getArtwork(991001, "fanart", Locale.ENGLISH).get(0);
+		assertEquals("https://artworks.thetvdb.com/banners/background.jpg", artwork.getUrl().toString());
+		assertTrue(artwork.matches("fanart", "1920x1080"));
 
-		assertEquals("Wonderfalls", first.getSeriesName());
-		assertEquals("2004-03-12", first.getSeriesInfo().getStartDate().toString());
-		assertEquals("Wax Lion", first.getTitle());
-		assertEquals("1", first.getEpisode().toString());
-		assertEquals("1", first.getSeason().toString());
-		assertEquals(null, first.getAbsolute()); // should be "1" but data has not yet been entered
-		assertEquals("2004-03-12", first.getAirdate().toString());
-		assertEquals("296337", first.getId().toString());
+		Person actor = client.getActors(991001, Locale.ENGLISH).get(0);
+		assertEquals("Example Performer", actor.getName());
+		assertEquals("Example Character", actor.getCharacter());
+		assertEquals(Person.ACTOR, actor.getJob());
+
+		EpisodeInfo episode = client.getEpisodeInfo(992001, Locale.ENGLISH);
+		assertEquals(Integer.valueOf(991001), episode.getSeriesId());
+		assertEquals("Episode overview", episode.getOverview());
+		assertEquals("Example Director", episode.getDirectors().get(0));
 	}
 
-	@Test
-	public void getEpisodeListMissingInformation() throws Exception {
-		List<Episode> list = db.getEpisodeList(wonderfalls, SortOrder.Airdate, Locale.JAPANESE);
+	private static class FixtureApi implements TheTVDBApi {
 
-		Episode first = list.get(0);
+		private String query;
+		private String remoteId;
+		private String seasonType;
+		private Locale locale;
 
-		assertEquals("Wonderfalls", first.getSeriesName());
-		assertEquals("Wax Lion", first.getTitle());
+		@Override
+		public Object searchSeries(String query, Locale locale, Duration expirationTime) {
+			this.query = query;
+			this.locale = locale;
+			return json("{\"data\":[{\"type\":\"series\",\"tvdb_id\":\"991001\",\"name_translated\":\"Fixture Show\",\"aliases\":[\"Fixture Alias\"]},{\"type\":\"movie\",\"tvdb_id\":\"1\",\"name\":\"Ignore Me\"}]}");
+		}
+
+		@Override
+		public Object searchSeriesByRemoteId(String remoteId, Locale locale, Duration expirationTime) {
+			this.remoteId = remoteId;
+			return json("{\"data\":[{\"type\":\"series\",\"tvdb_id\":\"991001\",\"name\":\"Fixture Show\"}]}");
+		}
+
+		@Override
+		public Object getSeries(int id, Locale locale, Duration expirationTime) {
+			return json("{\"data\":{\"id\":991001,\"name\":\"Fixture Show\",\"aliases\":[{\"name\":\"Extended Alias\"}],\"averageRuntime\":45,\"firstAired\":\"2020-01-02\",\"overview\":\"Fixture overview\",\"airsTime\":\"20:00\",\"airsDays\":{\"friday\":true},\"image\":\"/banners/fixture.jpg\",\"lastUpdated\":\"2024-01-02T03:04:05Z\",\"status\":{\"name\":\"Continuing\"},\"originalNetwork\":{\"name\":\"Fixture Network\"},\"genres\":[{\"name\":\"Drama\"}],\"contentRatings\":[{\"name\":\"TV-14\"}],\"remoteIds\":[{\"id\":\"tt1234567\",\"sourceName\":\"IMDB\"}],\"translations\":{\"nameTranslations\":[{\"language\":\"deu\",\"name\":\"Beispielserie\"}],\"overviewTranslations\":[{\"language\":\"deu\",\"overview\":\"Deutsche Beschreibung\"}]},\"artworks\":[{\"type\":3,\"image\":\"/banners/background.jpg\",\"width\":1920,\"height\":1080,\"language\":\"eng\",\"score\":9.5}],\"characters\":[{\"peopleType\":\"Actor\",\"personName\":\"Example Performer\",\"name\":\"Example Character\",\"sort\":1,\"personImgURL\":\"/people/example.jpg\"}]}}");
+		}
+
+		@Override
+		public Object getSeriesEpisodes(int id, String seasonType, Locale locale, int page, Duration expirationTime) {
+			this.seasonType = seasonType;
+			return json("{\"data\":{\"episodes\":[{\"id\":992001,\"name\":\"DVD Premiere\",\"seasonNumber\":1,\"number\":1,\"absoluteNumber\":7,\"aired\":\"2020-01-02\"},{\"id\":992000,\"name\":\"Special\",\"seasonNumber\":0,\"number\":1}]},\"links\":{\"next\":null}}");
+		}
+
+		@Override
+		public Object getEpisode(int id, Locale locale, Duration expirationTime) {
+			return json("{\"data\":{\"id\":992001,\"seriesId\":991001,\"overview\":\"Episode overview\",\"characters\":[{\"peopleType\":\"Director\",\"personName\":\"Example Director\",\"sort\":1}]}}");
+		}
+
+		@Override
+		public Object getLanguages(Duration expirationTime) {
+			return json("{\"data\":[{\"id\":\"eng\",\"shortCode\":\"en\"}]}");
+		}
+
+		@Override
+		public Object getArtworkTypes(Duration expirationTime) {
+			return json("{\"data\":[{\"id\":3,\"name\":\"Series Background\",\"slug\":\"series-background\"}]}");
+		}
+
+		private static Object json(String value) {
+			return readJson(value);
+		}
 	}
-
-	@Test
-	public void getEpisodeListIllegalSeries() throws Exception {
-		List<Episode> list = db.getEpisodeList(new SearchResult(313193, "*** DOES NOT EXIST ***"), SortOrder.Airdate, Locale.ENGLISH);
-		assertTrue(list.isEmpty());
-	}
-
-	@Test
-	public void getEpisodeListNumberingDVD() throws Exception {
-		List<Episode> list = db.getEpisodeList(firefly, SortOrder.DVD, Locale.ENGLISH);
-
-		Episode first = list.get(0);
-		assertEquals("Firefly", first.getSeriesName());
-		assertEquals("2002-09-20", first.getSeriesInfo().getStartDate().toString());
-		assertEquals("Serenity", first.getTitle());
-		assertEquals("1", first.getEpisode().toString());
-		assertEquals("1", first.getSeason().toString());
-		assertEquals("1", first.getAbsolute().toString());
-		assertEquals("2002-12-20", first.getAirdate().toString());
-	}
-
-	@Test
-	public void getEpisodeListNumberingAbsoluteAirdate() throws Exception {
-		List<Episode> list = db.getEpisodeList(firefly, SortOrder.AbsoluteAirdate, Locale.ENGLISH);
-
-		Episode first = list.get(0);
-		assertEquals("Firefly", first.getSeriesName());
-		assertEquals("2002-09-20", first.getSeriesInfo().getStartDate().toString());
-		assertEquals("The Train Job", first.getTitle());
-		assertEquals("20020920", first.getEpisode().toString());
-		assertEquals(null, first.getSeason());
-		assertEquals("2", first.getAbsolute().toString());
-		assertEquals("2002-09-20", first.getAirdate().toString());
-	}
-
-	public void getEpisodeListLink() {
-		assertEquals("http://www.thetvdb.com/?tab=seasonall&id=78874", db.getEpisodeListLink(firefly).toString());
-	}
-
-	@Test
-	public void lookupByID() throws Exception {
-		SearchResult series = db.lookupByID(78874, Locale.ENGLISH);
-		assertEquals("Firefly", series.getName());
-		assertEquals(78874, series.getId());
-	}
-
-	@Test
-	public void lookupByIMDbID() throws Exception {
-		SearchResult series = db.lookupByIMDbID(303461, Locale.ENGLISH);
-		assertEquals("Firefly", series.getName());
-		assertEquals(78874, series.getId());
-	}
-
-	@Test
-	public void getSeriesInfo() throws Exception {
-		TheTVDBSeriesInfo it = db.getSeriesInfo(80348, Locale.ENGLISH);
-
-		assertEquals(80348, it.getId(), 0);
-		assertEquals("Action", it.getGenres().get(0));
-		assertEquals("en", it.getLanguage());
-		assertEquals("45", it.getRuntime().toString());
-		assertEquals("Chuck", it.getName());
-		assertEquals(9.0, it.getRating(), 0.5);
-		assertEquals(1000, it.getRatingCount(), 100);
-		assertEquals("tt0934814", it.getImdbId());
-		assertEquals("Friday", it.getAirsDayOfWeek());
-		assertEquals("8:00 PM", it.getAirsTime());
-		assertEquals(500, it.getOverview().length(), 100);
-		assertEquals("http://thetvdb.com/banners/graphical/80348-g26.jpg", it.getBannerUrl().toString());
-	}
-
-	@Test
-	public void getArtwork() throws Exception {
-		Artwork i = db.getArtwork(buffy.getId(), "fanart", Locale.ENGLISH).get(0);
-
-		assertEquals("[fanart, graphical, 1280x720]", i.getTags().toString());
-		assertEquals("http://thetvdb.com/banners/fanart/original/70327-31.jpg", i.getUrl().toString());
-		assertTrue(i.matches("fanart", "1280x720"));
-		assertFalse(i.matches("fanart", "1280x720", "1"));
-		assertEquals(8.0, i.getRating(), 1.0);
-	}
-
-	@Test
-	public void getLanguages() throws Exception {
-		List<String> languages = db.getLanguages();
-		assertEquals("[zh, en, sv, no, da, fi, nl, de, it, es, fr, pl, hu, el, tr, ru, he, ja, pt, cs, sl, hr, ko]", languages.toString());
-	}
-
-	@Test
-	public void getActors() throws Exception {
-		Person p = db.getActors(firefly.getId(), Locale.ENGLISH).get(0);
-		assertEquals("Alan Tudyk", p.getName());
-		assertEquals("Hoban 'Wash' Washburne", p.getCharacter());
-		assertEquals("Actor", p.getJob());
-		assertEquals(null, p.getDepartment());
-		assertEquals("0", p.getOrder().toString());
-		assertEquals("http://thetvdb.com/banners/actors/68409.jpg", p.getImage().toString());
-	}
-
-	@Test
-	public void getEpisodeInfo() throws Exception {
-		EpisodeInfo i = db.getEpisodeInfo(296337, Locale.ENGLISH);
-
-		assertEquals("78845", i.getSeriesId().toString());
-		assertEquals("296337", i.getId().toString());
-		assertEquals(8.2, i.getRating(), 0.1);
-		assertEquals(6, i.getVotes(), 5);
-		assertEquals("When Jaye Tyler is convinced by a waxed lion to chase after a shinny quarter, she finds herself returning a lost purse to a lady (who instead of thanking her, is punched in the face), meeting an attractive and sweet bartender names Eric, introducing her sister, Sharon to the EPS newly divorced bachelor, Thomas, she knows, and later discovering her sister, Sharon's sexuality.", i.getOverview().toString());
-		assertEquals("[Todd Holland, Bryan Fuller, Todd Holland]", i.getDirectors().toString());
-		assertEquals("[Todd Holland, Bryan Fuller]", i.getWriters().toString());
-		assertEquals("[Scotch Ellis Loring, Gerry Fiorini, Kim Roberts, Corry Karpf, Curt Wu, Bailey Stocker, Lisa Marcos, Jorge Molina, Morgan Drmaj, Chantal Purdy, Kari Matchett, Neil Grayston, Anna Starnino, Melissa Grelo, Brandon Oakes, Scotch Ellis Loring, Ted Dykstra, Kathryn Greenwood, G]", i.getActors().toString());
-	}
-
 }

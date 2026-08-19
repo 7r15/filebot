@@ -2,6 +2,7 @@ package net.filebot.web;
 
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
+import static net.filebot.Settings.*;
 import static net.filebot.util.JsonUtilities.*;
 import static net.filebot.web.WebRequest.*;
 
@@ -55,6 +56,10 @@ public final class ProviderConnectionTester {
 	private static void testTheTVDB(String apiKey) throws Exception {
 		Map<String, String> credentials = new LinkedHashMap<String, String>();
 		credentials.put("apikey", apiKey);
+		String pin = getApiKey("thetvdb.pin");
+		if (!pin.isEmpty()) {
+			credentials.put("pin", pin);
+		}
 		ByteBuffer response = post(new URL(endpoint("thetvdb", "https://api4.thetvdb.com/v4/login")), json(credentials, false).getBytes(UTF_8), "application/json", singletonMap("Accept", "application/json"));
 		if (getString(getMap(readJson(UTF_8.decode(response)), "data"), "token") == null) {
 			throw new IllegalStateException();
