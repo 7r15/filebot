@@ -47,6 +47,8 @@ The equivalent Java properties are `net.filebot.apikey.thetvdb` and `net.filebot
 
 For OpenSubtitles, create an API consumer key from your [OpenSubtitles.com account](https://www.opensubtitles.com/consumers) and provide it as `FILEBOT_APIKEY_OPENSUBTITLES`.
 
+For AcoustID lookups, register an application and provide its application API key as `FILEBOT_APIKEY_ACOUSTID`. The user key shown after signing in is intended for fingerprint submissions and cannot be used as the lookup client key. The integration uses compressed HTTPS requests and observes the service limit of three requests per second. AcoustID's public service is limited to non-commercial use unless separate permission is arranged.
+
 OpenSubtitles downloads also require an OpenSubtitles.com account. Enter it in the subtitle panel for the current session, or configure it at launch:
 
 ```text
