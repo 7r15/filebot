@@ -51,6 +51,8 @@ For AcoustID lookups, register an application and provide its application API ke
 
 OMDb requests use HTTPS and require `FILEBOT_APIKEY_OMDB`. Free keys are limited to 1,000 requests per day, and OMDb content is licensed for non-commercial use.
 
+AniDB requires a registered HTTP API client identifier and version on every anime request. Configure them as `FILEBOT_APIKEY_ANIDB` and `FILEBOT_APIKEY_ANIDB_VERSION`; the equivalent Java properties are `net.filebot.apikey.anidb` and `net.filebot.apikey.anidb.version`. The integration normalizes the identifier to lowercase, caches anime data for one week, caches the title dump weekly, and spaces detail requests at least two seconds apart as required by AniDB.
+
 OpenSubtitles downloads also require an OpenSubtitles.com account. Enter it in the subtitle panel for the current session, or configure it at launch:
 
 ```text

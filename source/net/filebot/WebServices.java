@@ -55,7 +55,7 @@ public final class WebServices {
 
 	// episode sources
 	public static final TVMazeClient TVmaze = new TVMazeClient();
-	public static final AnidbClient AniDB = new AnidbClientWithLocalSearch(getApiKey("anidb"), 6);
+	public static final AnidbClient AniDB = new AnidbClientWithLocalSearch(getApiKey("anidb"), getAniDBClientVersion());
 
 	// extended TheTVDB module with local search
 	public static final TheTVDBClientWithLocalSearch TheTVDB = new TheTVDBClientWithLocalSearch(getApiKey("thetvdb"));
@@ -251,6 +251,21 @@ public final class WebServices {
 			}
 		}
 		return "";
+	}
+
+	private static int getAniDBClientVersion() {
+		String value = getApiKey("anidb.version");
+		if (!value.isEmpty()) {
+			try {
+				int version = Integer.parseInt(value);
+				if (version > 0) {
+					return version;
+				}
+			} catch (NumberFormatException e) {
+				debug.warning("Invalid AniDB client version; using version 6");
+			}
+		}
+		return 6;
 	}
 
 	public static String[] getLogin(String key) {

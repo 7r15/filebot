@@ -3,7 +3,6 @@ package net.filebot.web;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
-import static net.filebot.CachedResource.*;
 import static net.filebot.Logging.*;
 import static net.filebot.util.StringUtilities.*;
 import static net.filebot.util.XPathUtilities.*;
@@ -13,14 +12,12 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
-import java.net.URL;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -38,14 +35,14 @@ import net.filebot.ResourceManager;
 
 public class AnidbClient extends AbstractEpisodeListProvider {
 
-	private static final FloodLimit REQUEST_LIMIT = new FloodLimit(2, 5, TimeUnit.SECONDS); // no more than 2 requests within a 5 second window
-
-	private final String client;
-	private final int clientver;
+	private final AniDBApi api;
 
 	public AnidbClient(String client, int clientver) {
-		this.client = client;
-		this.clientver = clientver;
+		this(new AniDBHttpApi(client, clientver));
+	}
+
+	AnidbClient(AniDBApi api) {
+		this.api = api;
 	}
 
 	@Override
@@ -90,7 +87,7 @@ public class AnidbClient extends AbstractEpisodeListProvider {
 	@Override
 	protected SeriesData fetchSeriesData(SearchResult anime, SortOrder sortOrder, Locale locale) throws Exception {
 		// get anime page as xml
-		Document dom = getXmlResource(anime.getId());
+		Document dom = api.getAnime(anime.getId());
 
 		// check for errors (e.g. <error>Banned</error>)
 		String error = selectString("/error", dom);
@@ -167,20 +164,10 @@ public class AnidbClient extends AbstractEpisodeListProvider {
 
 		// sanity check
 		if (episodes.isEmpty()) {
-			debug.fine(format("No episode data: %s (%d) => %s", anime, anime.getId(), getResource(anime.getId())));
+			debug.fine(format("No episode data: %s (%d)", anime, anime.getId()));
 		}
 
 		return new SeriesData(seriesInfo, episodes);
-	}
-
-	private Document getXmlResource(int aid) throws Exception {
-		Cache cache = Cache.getCache(getName(), CacheType.Monthly);
-		return cache.xml(aid, this::getResource).fetch(withPermit(fetchIfModified(), r -> REQUEST_LIMIT.acquirePermit())).expire(Cache.ONE_WEEK).get();
-	}
-
-	private URL getResource(int aid) throws Exception {
-		// e.g. http://api.anidb.net:9001/httpapi?request=anime&client=filebot&clientver=1&protover=1&aid=4521
-		return new URL("http://api.anidb.net:9001/httpapi?request=anime&client=" + client + "&clientver=" + clientver + "&protover=1&aid=" + aid);
 	}
 
 	@Override
@@ -213,7 +200,7 @@ public class AnidbClient extends AbstractEpisodeListProvider {
 	 */
 	public SearchResult[] getAnimeTitles() throws Exception {
 		// get data file (unzip and cache)
-		byte[] bytes = getCache("root").bytes("anime-titles.dat.gz", n -> new URL("http://anidb.net/api/" + n)).get();
+		byte[] bytes = api.getAnimeTitles();
 
 		// <aid>|<type>|<language>|<title>
 		// type: 1=primary title (one per anime), 2=synonyms (multiple per anime), 3=shorttitles (multiple per anime), 4=official title (one per language)
@@ -266,7 +253,7 @@ public class AnidbClient extends AbstractEpisodeListProvider {
 					}
 				}
 				return 0;
-			}).map(n -> n[2].toString()).collect(toList());
+			}).map(n -> n[2].toString()).distinct().collect(toList());
 
 			String primaryTitle = names.get(0);
 			List<String> aliasNames = names.subList(1, names.size());
