@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.prefs.BackingStoreException;
@@ -46,18 +47,84 @@ public final class Settings {
 	}
 
 	public static String getApiKey(String name) {
+		ApiKeySource source = getApiKeySource(name);
+		switch (source) {
+		case JAVA_PROPERTY:
+			return System.getProperty(getApiKeyPropertyName(name)).trim();
+		case ENVIRONMENT:
+			return System.getenv(getApiKeyEnvironmentName(name)).trim();
+		case USER:
+			return getUserApiKey(name);
+		case APPLICATION:
+			return getApplicationProperty("apikey." + name).trim();
+		default:
+			return "";
+		}
+	}
+
+	public static ApiKeySource getApiKeySource(String name) {
 		String propertyName = "net.filebot.apikey." + name;
-		String environmentName = "FILEBOT_APIKEY_" + name.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "_");
-
 		String value = System.getProperty(propertyName);
-		if (value == null || value.trim().isEmpty()) {
-			value = System.getenv(environmentName);
-		}
-		if (value == null || value.trim().isEmpty()) {
-			value = getApplicationProperty("apikey." + name);
+		if (value != null && !value.trim().isEmpty()) {
+			return ApiKeySource.JAVA_PROPERTY;
 		}
 
-		return value == null ? "" : value.trim();
+		value = System.getenv(getApiKeyEnvironmentName(name));
+		if (value != null && !value.trim().isEmpty()) {
+			return ApiKeySource.ENVIRONMENT;
+		}
+
+		value = getUserApiKey(name);
+		if (value != null && !value.trim().isEmpty()) {
+			return ApiKeySource.USER;
+		}
+
+		try {
+			value = getApplicationProperty("apikey." + name);
+			if (value != null && !value.trim().isEmpty()) {
+				return ApiKeySource.APPLICATION;
+			}
+		} catch (MissingResourceException e) {
+			// no packaged default
+		}
+
+		return ApiKeySource.MISSING;
+	}
+
+	public static String getUserApiKey(String name) {
+		return forPackage(Settings.class).node("ProviderCredentials").get(name, "").trim();
+	}
+
+	public static void setUserApiKey(String name, String value) {
+		Settings credentials = forPackage(Settings.class).node("ProviderCredentials");
+		if (value == null || value.trim().isEmpty()) {
+			credentials.remove(name);
+		} else {
+			credentials.put(name, value.trim());
+		}
+	}
+
+	public static String getApiKeyPropertyName(String name) {
+		return "net.filebot.apikey." + name;
+	}
+
+	public static String getApiKeyEnvironmentName(String name) {
+		return "FILEBOT_APIKEY_" + name.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "_");
+	}
+
+	public static enum ApiKeySource {
+		JAVA_PROPERTY("Java property"), ENVIRONMENT("Environment"), USER("Saved setting"), APPLICATION("Packaged default"), MISSING("Not configured");
+
+		private final String displayName;
+
+		private ApiKeySource(String displayName) {
+			this.displayName = displayName;
+		}
+
+		@Override
+		public String toString() {
+			return displayName;
+		}
 	}
 
 	public static boolean isUnixFS() {
